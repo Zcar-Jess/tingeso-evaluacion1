@@ -1,0 +1,8 @@
+cat <<EOT > .gitignore
+.idea/
+*.iml
+target/
+**/target/
+*.zip
+.env
+EOT
