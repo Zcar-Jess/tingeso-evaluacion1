@@ -1,7 +1,7 @@
 # SIGA IPT - complete system.
 #   docker compose up -d --build     (build the images here)
 #   docker compose pull && docker compose up -d     (use the images from Docker Hub, e.g. on the server)
-# All configuration comes from the .env file (copy .env.example to .env).
+# All configuration comes from the .env file
 
 # Shared definition of the three backend replicas
 x-backend: &backend
