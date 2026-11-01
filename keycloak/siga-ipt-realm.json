@@ -1,0 +1,71 @@
+{
+  "realm": "siga-ipt",
+  "displayName": "SIGA IPT",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "accessTokenLifespan": 1800,
+  "roles": {
+    "realm": [
+      { "name": "ADMIN", "description": "Administrador Académico" },
+      { "name": "TEACHER", "description": "Docente" },
+      { "name": "STUDENT", "description": "Estudiante" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "siga-frontend",
+      "name": "SIGA IPT Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "rootUrl": "",
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Administrador",
+      "lastName": "Académico",
+      "email": "admin@ipt.cl",
+      "credentials": [{ "type": "password", "value": "Admin123!", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "docente",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Docente",
+      "lastName": "Demo",
+      "email": "docente@ipt.cl",
+      "credentials": [{ "type": "password", "value": "Docente123!", "temporary": false }],
+      "realmRoles": ["TEACHER"]
+    },
+    {
+      "username": "estudiante",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Estudiante",
+      "lastName": "Demo",
+      "email": "estudiante@ipt.cl",
+      "credentials": [{ "type": "password", "value": "Estudiante123!", "temporary": false }],
+      "realmRoles": ["STUDENT"]
+    }
+  ]
+}
