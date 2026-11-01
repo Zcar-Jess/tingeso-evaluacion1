@@ -15,5 +15,5 @@ WORKDIR /app
 COPY --from=build /build/target/*.jar app.jar
 USER spring
 EXPOSE 8080
-# environment variables (DB_URL, DB_USERNAME, DB_PASSWORD, KEYCLOAK
+# All configuration comes from environment variables (DB_URL, DB_USERNAME, DB_PASSWORD, KEYCLOAK_*, ...)
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

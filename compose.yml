@@ -1,4 +1,4 @@
-# SIGA IPT
+# SIGA IPT - complete system.
 #   docker compose up -d --build     (build the images here)
 #   docker compose pull && docker compose up -d     (use the images from Docker Hub, e.g. on the server)
 # All configuration comes from the .env file (copy .env.example to .env).
@@ -26,6 +26,14 @@ x-backend: &backend
     timeout: 5s
     retries: 18
     start_period: 40s
+
+# Shared definition of the three frontend replicas
+x-frontend: &frontend
+  image: ${DOCKERHUB_USER}/siga-ipt-frontend:${IMAGE_TAG:-latest}
+  build: ./siga-ipt-frontend
+  restart: unless-stopped
+  environment:
+    KEYCLOAK_URL: http://${PUBLIC_HOST}:9090
 
 services:
   postgres:
@@ -78,27 +86,40 @@ services:
       backend1:
         condition: service_healthy
 
-  frontend:
-    image: ${DOCKERHUB_USER}/siga-ipt-frontend:${IMAGE_TAG:-latest}
-    build: ./siga-ipt-frontend
-    restart: unless-stopped
-    environment:
-      KEYCLOAK_URL: http://${PUBLIC_HOST}:9090
+  frontend1:
+    <<: *frontend
 
-  loadbalancer:
+  frontend2:
+    <<: *frontend
+
+  frontend3:
+    <<: *frontend
+
+  # Load balancer of the backend layer (internal)
+  nginx-backend:
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
       - ./nginx/nginx-backend.conf:/etc/nginx/conf.d/default.conf:ro
-    ports:
-      - "8070:80"
     depends_on:
       backend2:
         condition: service_healthy
       backend3:
         condition: service_healthy
-      frontend:
-        condition: service_started
+
+  # Load balancer of the frontend layer: the entry point, http://localhost:8070
+  nginx-frontend:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx-frontend.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8070:80"
+    depends_on:
+      - nginx-backend
+      - frontend1
+      - frontend2
+      - frontend3
 
 volumes:
   postgres_data:
