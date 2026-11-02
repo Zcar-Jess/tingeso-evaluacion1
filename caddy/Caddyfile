@@ -1,0 +1,8 @@
+# HTTPS in front of the system (used on the cloud server). DOMAIN comes from the .env file.
+{$DOMAIN} {
+	reverse_proxy nginx-frontend:80
+}
+
+{$DOMAIN}:9090 {
+	reverse_proxy keycloak:8080
+}

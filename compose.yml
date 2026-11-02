@@ -1,7 +1,7 @@
 # SIGA IPT - complete system.
 #   docker compose up -d --build     (build the images here)
 #   docker compose pull && docker compose up -d     (use the images from Docker Hub, e.g. on the server)
-# All configuration comes from the .env file
+# All configuration comes from the .env file (copy .env.example to .env).
 
 # Shared definition of the three backend replicas
 x-backend: &backend
@@ -14,7 +14,7 @@ x-backend: &backend
     DB_PASSWORD: ${POSTGRES_PASSWORD}
     # Issuer = the public URL of Keycloak (the "iss" claim of the tokens);
     # the keys are downloaded through the internal network.
-    KEYCLOAK_ISSUER_URI: http://${PUBLIC_HOST}:9090/realms/siga-ipt
+    KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://${PUBLIC_HOST:-localhost}:9090}/realms/siga-ipt
     KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/siga-ipt/protocol/openid-connect/certs
     DEMO_DATA: ${DEMO_DATA:-true}
     JAVA_OPTS: -Xmx384m
@@ -33,7 +33,7 @@ x-frontend: &frontend
   build: ./siga-ipt-frontend
   restart: unless-stopped
   environment:
-    KEYCLOAK_URL: http://${PUBLIC_HOST}:9090
+    KEYCLOAK_URL: ${KEYCLOAK_PUBLIC_URL:-http://${PUBLIC_HOST:-localhost}:9090}
 
 services:
   postgres:
@@ -58,13 +58,17 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HOSTNAME: http://${PUBLIC_HOST}:9090
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://${PUBLIC_HOST:-localhost}:9090}
       KC_HTTP_ENABLED: "true"
+      # needed when Keycloak is behind the HTTPS proxy (Caddy)
+      KC_PROXY_HEADERS: xforwarded
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
     ports:
-      - "9090:8080"
+      # locally: http://localhost:9090. On the server (HTTPS) Caddy uses 9090, so .env moves this
+      # mapping to a private port with KEYCLOAK_PORTS=127.0.0.1:8081:8080
+      - "${KEYCLOAK_PORTS:-9090:8080}"
 
   # The first replica creates the tables and loads the initial data; the other two start
   # when it is ready, so they never try to do it at the same time.
@@ -121,6 +125,30 @@ services:
       - frontend2
       - frontend3
 
+  # HTTPS (only when the "https" profile is active, i.e. on the cloud server).
+  # Caddy gets a free Let's Encrypt certificate for DOMAIN automatically.
+  #   https://DOMAIN        -> the web application
+  #   https://DOMAIN:9090   -> Keycloak
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9090:9090"
+    depends_on:
+      - nginx-frontend
+      - keycloak
+
 volumes:
   postgres_data:
   keycloak_data:
+  caddy_data:
+  caddy_config:
